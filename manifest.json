@@ -1,0 +1,10 @@
+{
+  "name": "XAUUSD Trading Journal",
+  "short_name": "XAU Journal",
+  "start_url": "./xauusd_trading_journal.html",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "description": "Personal XAUUSD trading journal and tag analytics",
+  "icons": []
+}
