@@ -9,65 +9,80 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="XAU Journal">
 <link rel="manifest" href="./manifest.json">
-<title>XAUUSD Trading Journal V3</title>
+<title>XAUUSD Trading Journal V7</title>
 <style>
-:root{--bg:#0b1020;--panel:#121a2e;--panel2:#18223b;--text:#edf2ff;--muted:#8f9bb8;--line:#293653;--green:#35d07f;--red:#ff5d73;--yellow:#f5c451;--blue:#65a7ff}
+:root{--bg:#07101f;--panel:#101b30;--panel2:#172744;--text:#eef4ff;--muted:#9aaccb;--line:#243b61;--green:#19e0a2;--red:#ff647c;--yellow:#ffd166;--blue:#75aaff;--shadow:0 12px 28px rgba(0,0,0,.16)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{background:var(--bg)}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+html{background:var(--bg);scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(ellipse at top,#0b1a33 0,#07101f 50%);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.45}
 button,input,select,textarea{font:inherit}
-button{border:0;border-radius:9px;padding:10px 15px;background:var(--blue);color:#08101f;font-weight:700;cursor:pointer;touch-action:manipulation}
-button:active{transform:scale(.98)}
-.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
-.danger{background:#3b1720;color:#ff8b9b}
-.container{max-width:1400px;margin:auto;padding:20px 24px 90px}
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-.title h1{margin:0;font-size:27px}.title p{margin:5px 0;color:var(--muted);font-size:13px}
-.tabs{display:flex;gap:8px;margin-bottom:16px}.tab{background:var(--panel);color:var(--muted);border:1px solid var(--line)}.tab.active{background:var(--blue);color:#08101f}
+button{border:1px solid transparent;border-radius:11px;padding:10px 14px;background:linear-gradient(135deg,#7bb6ff,#6195f5);color:#061226;font-weight:750;cursor:pointer;touch-action:manipulation;transition:filter .15s,transform .15s}
+button:active{transform:scale(.98);filter:brightness(.95)}
+.ghost{background:#172846;color:var(--text);border:1px solid #2a426a}
+.danger{background:#401c2a;color:#ff9eae;border:1px solid #6b2a40}
+.container{width:min(100%,1440px);margin:0 auto;padding:24px 26px 110px}
+.header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:22px}
+.title h1{margin:0;font-size:clamp(22px,2.3vw,32px);letter-spacing:-.035em;line-height:1.2}.title p{margin:8px 0 0;color:var(--muted);font-size:13px}
+.tabs{display:flex;gap:8px;margin-bottom:18px}.tab{background:var(--panel);color:var(--muted);border:1px solid var(--line)}.tab.active{background:var(--blue);color:#061226}
 .page{display:none}.page.active{display:block}
-.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
-.card,.panel{background:var(--panel);border:1px solid var(--line);border-radius:13px}
-.card{padding:16px}.panel{padding:17px;margin-top:13px}.panel h2{font-size:17px;margin:0 0 13px}
-.metric{font-size:27px;font-weight:800;margin-top:7px}.label{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.card,.panel{background:linear-gradient(145deg,rgba(17,29,51,.98),rgba(13,24,43,.98));border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+.card{padding:18px;min-width:0}.panel{padding:20px;margin-top:16px;min-width:0}.panel h2{font-size:18px;margin:0 0 16px;letter-spacing:-.02em}
+.metric{font-size:clamp(22px,2.4vw,30px);font-weight:850;letter-spacing:-.035em;margin-top:7px;overflow-wrap:anywhere}.label{color:var(--muted);font-size:13px}
 .green{color:var(--green)}.red{color:var(--red)}.yellow{color:var(--yellow)}
-.table-wrap{overflow:auto;-webkit-overflow-scrolling:touch}
-.table{width:100%;border-collapse:collapse}.table th,.table td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;font-size:13px}.table th{color:var(--muted)}
-.formgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
-.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}.field label,.section-title{font-size:12px;color:var(--muted)}
-input,select,textarea{width:100%;background:#0d1528;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px;outline:none}
-input:focus,select:focus,textarea:focus{border-color:var(--blue)}
-textarea{min-height:90px;resize:vertical}
-.section-title{margin:17px 0 8px}.tags{display:flex;flex-wrap:wrap;gap:7px}
-.tagbtn{background:#101a30;color:#c9d4ed;border:1px solid var(--line);padding:8px 10px;border-radius:8px;font-size:12px}
-.tagbtn.selected{background:#204f82;border-color:#65a7ff;color:#fff}
-.tag{display:inline-block;padding:4px 8px;margin:2px;border-radius:999px;background:#202d49;border:1px solid #344666;font-size:11px}
-.actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters input,.filters select{width:auto;min-width:145px}
-.empty{text-align:center;color:var(--muted);padding:32px}.two{display:grid;grid-template-columns:1.3fr .7fr;gap:13px}
-.preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.shot{border:1px dashed #3a4b6b;border-radius:10px;min-height:135px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#0c1425;position:relative;margin-top:6px}
-.shot img{width:100%;height:100%;object-fit:cover;display:block}.shot span{color:#7483a2;font-size:12px;text-align:center;padding:10px}
+.table-wrap{max-width:100%;overflow:auto;-webkit-overflow-scrolling:touch;border-radius:10px}
+.table{width:100%;border-collapse:collapse}.table th,.table td{padding:12px 10px;border-bottom:1px solid rgba(55,78,115,.6);text-align:left;white-space:nowrap;font-size:13px}.table th{color:var(--muted);font-weight:650}.table tr:last-child td{border-bottom:0}
+.formgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.field{display:flex;flex-direction:column;gap:7px;min-width:0}.field.full{grid-column:1/-1}.field label,.section-title{font-size:12px;color:var(--muted);font-weight:650}
+input,select,textarea{width:100%;min-width:0;background:#091427;border:1px solid #2a4063;border-radius:10px;color:var(--text);padding:12px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(117,170,255,.12)}
+textarea{min-height:100px;resize:vertical}
+.section-title{margin:20px 0 9px}.tags{display:flex;flex-wrap:wrap;gap:7px}
+.tagbtn{background:#12213a;color:#cbd8f0;border:1px solid #2a4164;padding:8px 11px;border-radius:999px;font-size:12px}
+.tagbtn.selected{background:#164b54;border-color:#19e0a2;color:#fff}
+.tag{display:inline-block;padding:4px 8px;margin:2px;border-radius:999px;background:#1a2c49;border:1px solid #30486d;font-size:11px}
+.actions{display:flex;gap:8px;margin-top:18px;justify-content:flex-end}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters input,.filters select{width:auto;min-width:145px}
+.empty{text-align:center;color:var(--muted);padding:34px 16px}.two{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(220px,.65fr);gap:16px;align-items:stretch}
+.preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.shot{border:1px dashed #3a5279;border-radius:12px;min-height:135px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#091427;position:relative;margin-top:7px}
+.shot img{width:100%;height:100%;object-fit:cover;display:block}.shot span{color:#8195b7;font-size:12px;text-align:center;padding:10px}
 .remove-shot{position:absolute;right:6px;top:6px;padding:5px 8px;background:#401a24;color:#ff9aaa}
-.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.cal-head{font-size:11px;color:var(--muted);text-align:center;padding:5px}
-.cal-day{min-height:74px;background:#0e172a;border:1px solid var(--line);border-radius:8px;padding:6px;font-size:11px;cursor:pointer}
-.cal-day.win{border-color:#236242}.cal-day.loss{border-color:#71303e}.cal-day .num{color:#9eabc4}.cal-dot{margin-top:5px}
-.install-tip{display:none;background:#17233c;border:1px solid #30415f;border-radius:12px;padding:12px;margin:0 0 13px;color:#cdd8ee}
+.calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}.cal-head{font-size:12px;color:var(--muted);text-align:center;padding:7px 2px;font-weight:650}
+.cal-day{min-height:82px;min-width:0;background:#0b172b;border:1px solid #22395d;border-radius:12px;padding:9px;font-size:12px;cursor:pointer;overflow:hidden;transition:border-color .15s,background .15s}
+.cal-day:active{background:#142746}.cal-day.win{border-color:#16775d;background:linear-gradient(145deg,rgba(15,86,68,.32),#0b172b)}.cal-day.loss{border-color:#783246;background:linear-gradient(145deg,rgba(105,28,48,.25),#0b172b)}.cal-day .num{color:#b5c4df;font-weight:650}.cal-dot{margin-top:7px;font-size:11px;font-weight:750;overflow-wrap:anywhere}
+.install-tip{display:none;background:#122541;border:1px solid #2d4971;border-radius:13px;padding:12px;margin:0 0 14px;color:#d2e0f7}
 .mobile-bottom{display:none}
-@media(max-width:900px){.grid,.two{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}}
-@media(max-width:600px){
- .container{padding:10px 12px calc(78px + env(safe-area-inset-bottom))}
- .header{position:sticky;top:0;z-index:10;background:rgba(11,16,32,.97);padding:10px 0;margin-bottom:10px}
- .title h1{font-size:20px}.title p{font-size:10px}.header>button{display:none}.tabs{display:none}
- .grid{grid-template-columns:1fr 1fr;gap:8px}.card{padding:12px}.metric{font-size:21px}
- .panel{padding:13px;margin-top:9px}.panel h2{font-size:15px}.formgrid{grid-template-columns:1fr 1fr;gap:9px}
+@media(max-width:1050px){.container{padding-left:18px;padding-right:18px}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.two{grid-template-columns:minmax(0,1.35fr) minmax(190px,.65fr)}}
+@media(max-width:700px){
+ body{font-size:14px}
+ .container{padding:0 12px calc(86px + env(safe-area-inset-bottom));width:100%}
+ .header{position:sticky;top:0;z-index:10;background:rgba(7,16,31,.96);backdrop-filter:blur(14px);padding:14px 2px 12px;margin:0 -12px 12px;padding-left:14px;padding-right:14px;border-bottom:1px solid rgba(36,59,97,.55)}
+ .title h1{font-size:20px}.title p{font-size:10px;line-height:1.4;margin-top:5px}.header>button{display:none}.tabs{display:none}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .card{padding:13px;border-radius:15px}.metric{font-size:22px;line-height:1.15}.label{font-size:12px}
+ .panel{padding:14px;margin-top:12px;border-radius:16px}.panel h2{font-size:16px;margin-bottom:13px}
+ .two{grid-template-columns:minmax(0,1fr);gap:0}
+ .two .panel{margin-top:12px}
+ .calendar{gap:4px}.cal-head{font-size:11px;padding:5px 0}
+ .cal-day{min-height:clamp(57px,15vw,84px);padding:5px;border-radius:9px;font-size:11px}
+ .cal-dot{margin-top:5px;font-size:clamp(8px,2.4vw,11px);line-height:1.25}
+ .formgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
  .field.full{grid-column:1/-1}input,select,textarea{padding:11px 9px;font-size:14px}
- .filters{display:grid;grid-template-columns:1fr 1fr}.filters input{grid-column:1/-1;width:100%}.filters select{width:100%;min-width:0}
- .filters button{width:100%;padding:10px 7px}
- .mobile-bottom{display:flex;position:fixed;left:0;right:0;bottom:0;height:66px;padding-bottom:env(safe-area-inset-bottom);background:#10182b;border-top:1px solid #293653;z-index:50;justify-content:space-around}
- .mobile-bottom button{flex:1;background:none;color:#91a0bd;border-radius:0;padding:5px 4px;font-size:10px}
- .mobile-bottom button strong{display:block;font-size:20px;color:#dce5f8;line-height:23px}
- .mobile-bottom button.active,.mobile-bottom button.active strong{color:#65a7ff}
- .preview-grid{grid-template-columns:1fr 1fr}.shot{min-height:105px}
- .table th,.table td{padding:8px 6px}
+ .filters{display:grid;grid-template-columns:1fr 1fr;gap:7px}.filters input{grid-column:1/-1;width:100%}.filters select{width:100%;min-width:0}
+ .filters button{width:100%;padding:10px 7px;font-size:12px}
+ .mobile-bottom{display:flex;position:fixed;left:0;right:0;bottom:0;min-height:68px;padding:7px 4px calc(7px + env(safe-area-inset-bottom));background:rgba(12,22,40,.97);backdrop-filter:blur(16px);border-top:1px solid #293e60;z-index:50;justify-content:space-around}
+ .mobile-bottom button{flex:1;min-width:0;background:none;border:0;color:#91a3c3;border-radius:10px;padding:3px 2px;font-size:10px}
+ .mobile-bottom button strong{display:block;font-size:20px;color:#cbd8f0;line-height:23px}
+ .mobile-bottom button.active,.mobile-bottom button.active strong{color:var(--green)}
+ .preview-grid{grid-template-columns:1fr 1fr;gap:8px}.shot{min-height:100px}
+ .table th,.table td{padding:10px 8px;font-size:12px}
+ .actions button{flex:1}
+}
+@media(max-width:380px){
+ .container{padding-left:9px;padding-right:9px}
+ .grid{gap:7px}.card{padding:11px}.metric{font-size:20px}
+ .panel{padding:11px}.cal-day{padding:4px;min-height:55px}.cal-dot{font-size:8px}
+ .title h1{font-size:18px}
 }
 </style>
 </head>
@@ -94,7 +109,7 @@ textarea{min-height:90px;resize:vertical}
       <div class="card"><div class="label">Total Trades</div><div id="mTrades" class="metric">0</div></div>
       <div class="card"><div class="label">Win Rate</div><div id="mWin" class="metric green">0%</div></div>
       <div class="card"><div class="label">Total P/L ($)</div><div id="mPL" class="metric">$0.00</div></div>
-      <div class="card"><div class="label">Total P/L ($)</div><div id="mPL" class="metric">$0.00</div></div>
+      <div class="card"><div class="label">Total R</div><div id="mR" class="metric">0.00R</div></div>
       <div class="card"><div class="label">Profit Factor</div><div id="mPF" class="metric">0.00</div></div>
     </div>
     <div class="panel"><h2>📅 Trading Calendar</h2><div id="calendar"></div></div>
@@ -306,6 +321,8 @@ function renderDashboard(){
   const grossLoss=Math.abs(trades.filter(x=>Number(x.r)<0).reduce((a,x)=>a+Number(x.r),0));
   $("mTrades").textContent=n;
   $("mWin").textContent=n?(w/n*100).toFixed(1)+"%":"0%";
+  $("mR").textContent=(totalR>=0?"+":"")+totalR.toFixed(2)+"R";
+  $("mR").className="metric "+(totalR>=0?"green":"red");
   
   $("mPF").textContent=grossLoss?(grossWin/grossLoss).toFixed(2):grossWin?"∞":"0.00";
   const totalPL=trades.reduce((a,x)=>a+(Number(x.pnl)||0),0);
