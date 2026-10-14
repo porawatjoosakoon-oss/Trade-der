@@ -25,7 +25,7 @@ button:active{transform:scale(.98)}
 .title h1{margin:0;font-size:27px}.title p{margin:5px 0;color:var(--muted);font-size:13px}
 .tabs{display:flex;gap:8px;margin-bottom:16px}.tab{background:var(--panel);color:var(--muted);border:1px solid var(--line)}.tab.active{background:var(--blue);color:#08101f}
 .page{display:none}.page.active{display:block}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
 .card,.panel{background:var(--panel);border:1px solid var(--line);border-radius:13px}
 .card{padding:16px}.panel{padding:17px;margin-top:13px}.panel h2{font-size:17px;margin:0 0 13px}
 .metric{font-size:27px;font-weight:800;margin-top:7px}.label{color:var(--muted);font-size:13px}
@@ -48,7 +48,7 @@ textarea{min-height:90px;resize:vertical}
 .shot img{width:100%;height:100%;object-fit:cover;display:block}.shot span{color:#7483a2;font-size:12px;text-align:center;padding:10px}
 .remove-shot{position:absolute;right:6px;top:6px;padding:5px 8px;background:#401a24;color:#ff9aaa}
 .calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.cal-head{font-size:11px;color:var(--muted);text-align:center;padding:5px}
-.cal-day{min-height:62px;background:#0e172a;border:1px solid var(--line);border-radius:8px;padding:6px;font-size:11px;cursor:pointer}
+.cal-day{min-height:74px;background:#0e172a;border:1px solid var(--line);border-radius:8px;padding:6px;font-size:11px;cursor:pointer}
 .cal-day.win{border-color:#236242}.cal-day.loss{border-color:#71303e}.cal-day .num{color:#9eabc4}.cal-dot{margin-top:5px}
 .install-tip{display:none;background:#17233c;border:1px solid #30415f;border-radius:12px;padding:12px;margin:0 0 13px;color:#cdd8ee}
 .mobile-bottom{display:none}
@@ -94,6 +94,7 @@ textarea{min-height:90px;resize:vertical}
       <div class="card"><div class="label">Total Trades</div><div id="mTrades" class="metric">0</div></div>
       <div class="card"><div class="label">Win Rate</div><div id="mWin" class="metric green">0%</div></div>
       <div class="card"><div class="label">Total R</div><div id="mR" class="metric">0.00R</div></div>
+      <div class="card"><div class="label">Total P/L ($)</div><div id="mPL" class="metric">$0.00</div></div>
       <div class="card"><div class="label">Profit Factor</div><div id="mPF" class="metric">0.00</div></div>
     </div>
     <div class="panel"><h2>📅 Trading Calendar</h2><div id="calendar"></div></div>
@@ -308,8 +309,11 @@ function renderDashboard(){
   $("mR").textContent=totalR.toFixed(2)+"R";
   $("mR").className="metric "+(totalR>=0?"green":"red");
   $("mPF").textContent=grossLoss?(grossWin/grossLoss).toFixed(2):grossWin?"∞":"0.00";
+  const totalPL=trades.reduce((a,x)=>a+(Number(x.pnl)||0),0);
+  $("mPL").textContent=(totalPL>=0?"+":"")+"$"+totalPL.toFixed(2);
+  $("mPL").className="metric "+(totalPL>=0?"green":"red");
   renderCalendar();
-  $("recent").innerHTML=n?`<div class="table-wrap"><table class="table"><tr><th>Date</th><th>Side</th><th>Result</th><th>R</th></tr>${trades.slice(0,7).map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.side)}</td><td class="${resultClass(x.result)}">${esc(x.result)}</td><td>${fmtR(x.r)}</td></tr>`).join("")}</table></div>`:"<div class='empty'>ยังไม่มี Trade</div>";
+  $("recent").innerHTML=n?`<div class="table-wrap"><table class="table"><tr><th>Date</th><th>Side</th><th>Result</th><th>R</th><th>P/L</th><th>Edit</th></tr>${trades.slice(0,7).map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.side)}</td><td class="${resultClass(x.result)}">${esc(x.result)}</td><td>${fmtR(x.r)}</td><td class="${Number(x.pnl)>=0?"green":"red"}">${Number(x.pnl)>=0?"+":""}$${(Number(x.pnl)||0).toFixed(2)}</td><td><button type="button" class="ghost" onclick="editTrade(${x.id})">Edit</button></td></tr>`).join("")}</table></div>`:"<div class='empty'>ยังไม่มี Trade</div>";
   const loss=trades.filter(x=>x.result==="Loss").length,be=trades.filter(x=>x.result==="BE").length;
   $("resultSummary").innerHTML=`<p>🟢 Win <b>${w}</b></p><p>🔴 Loss <b>${loss}</b></p><p>🟡 BE <b>${be}</b></p>`;
 }
@@ -317,7 +321,7 @@ function renderDashboard(){
 function renderTrades(){
   const q=$("search").value.toLowerCase(),rf=$("resultFilter").value,sf=$("sideFilter").value;
   const a=trades.filter(x=>(!rf||x.result===rf)&&(!sf||x.side===sf)&&(!q||((x.tags||[]).join(" ")+(x.note||"")+(x.symbol||"")).toLowerCase().includes(q)));
-  $("tradeTable").innerHTML=a.length?`<table class="table"><tr><th>Date</th><th>Symbol</th><th>Side</th><th>Entry</th><th>SL</th><th>TP</th><th>Result</th><th>R</th><th>Tags</th><th>Action</th></tr>${a.map(x=>`<tr><td>${esc(x.date)} ${esc(x.time)}</td><td>${esc(x.symbol)}</td><td>${esc(x.side)}</td><td>${x.entry}</td><td>${x.sl}</td><td>${x.tp}</td><td class="${resultClass(x.result)}">${esc(x.result)}</td><td>${fmtR(x.r)}</td><td>${(x.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}${x.before||x.after?" 📷":""}</td><td><button type="button" class="ghost" onclick="editTrade(${x.id})">Edit</button> <button type="button" class="danger" onclick="deleteTrade(${x.id})">×</button></td></tr>`).join("")}</table>`:"<div class='empty'>ไม่พบ Trade</div>";
+  $("tradeTable").innerHTML=a.length?`<table class="table"><tr><th>Date</th><th>Symbol</th><th>Side</th><th>Entry</th><th>SL</th><th>TP</th><th>Result</th><th>R</th><th>P/L ($)</th><th>Tags</th><th>Action</th></tr>${a.map(x=>`<tr><td>${esc(x.date)} ${esc(x.time)}</td><td>${esc(x.symbol)}</td><td>${esc(x.side)}</td><td>${x.entry}</td><td>${x.sl}</td><td>${x.tp}</td><td class="${resultClass(x.result)}">${esc(x.result)}</td><td>${fmtR(x.r)}</td><td class="${Number(x.pnl)>=0?"green":"red"}">${Number(x.pnl)>=0?"+":""}$${(Number(x.pnl)||0).toFixed(2)}</td><td>${(x.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}${x.before||x.after?" 📷":""}</td><td><button type="button" class="ghost" onclick="editTrade(${x.id})">Edit</button> <button type="button" class="danger" onclick="deleteTrade(${x.id})">×</button></td></tr>`).join("")}</table>`:"<div class='empty'>ไม่พบ Trade</div>";
 }
 $("search").addEventListener("input",renderTrades);
 $("resultFilter").addEventListener("change",renderTrades);
@@ -345,8 +349,8 @@ function renderCalendar(){
   for(let i=0;i<start;i++)s+="<div></div>";
   for(let d=1;d<=days;d++){
     const ds=`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-    const ts=trades.filter(x=>x.date===ds),r=ts.reduce((a,x)=>a+(Number(x.r)||0),0);
-    s+=`<div class="cal-day ${r>0?"win":r<0?"loss":""}" onclick="showDateTrades('${ds}')"><div class="num">${d}</div>${ts.length?`<div class="cal-dot">${r>=0?"🟢":"🔴"} ${r>=0?"+":""}${r.toFixed(1)}R</div>`:""}</div>`;
+    const ts=trades.filter(x=>x.date===ds),r=ts.reduce((a,x)=>a+(Number(x.r)||0),0),pl=ts.reduce((a,x)=>a+(Number(x.pnl)||0),0);
+    s+=`<div class="cal-day ${pl>0||(!pl&&r>0)?"win":pl<0||(!pl&&r<0)?"loss":""}" onclick="showDateTrades('${ds}')"><div class="num">${d}</div>${ts.length?`<div class="cal-dot">${pl>=0?"🟢":"🔴"} ${pl>=0?"+":""}$${pl.toFixed(2)}</div><div style="margin-top:3px;font-size:10px;color:#9eabc4">${r>=0?"+":""}${r.toFixed(2)}R</div>`:""}</div>`;
   }
   s+="</div>"; $("calendar").innerHTML=s;
 }
