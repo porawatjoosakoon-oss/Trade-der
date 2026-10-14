@@ -93,7 +93,7 @@ textarea{min-height:90px;resize:vertical}
     <div class="grid">
       <div class="card"><div class="label">Total Trades</div><div id="mTrades" class="metric">0</div></div>
       <div class="card"><div class="label">Win Rate</div><div id="mWin" class="metric green">0%</div></div>
-      <div class="card"><div class="label">Total R</div><div id="mR" class="metric">0.00R</div></div>
+      <div class="card"><div class="label">Total P/L ($)</div><div id="mPL" class="metric">$0.00</div></div>
       <div class="card"><div class="label">Total P/L ($)</div><div id="mPL" class="metric">$0.00</div></div>
       <div class="card"><div class="label">Profit Factor</div><div id="mPF" class="metric">0.00</div></div>
     </div>
@@ -306,8 +306,7 @@ function renderDashboard(){
   const grossLoss=Math.abs(trades.filter(x=>Number(x.r)<0).reduce((a,x)=>a+Number(x.r),0));
   $("mTrades").textContent=n;
   $("mWin").textContent=n?(w/n*100).toFixed(1)+"%":"0%";
-  $("mR").textContent=totalR.toFixed(2)+"R";
-  $("mR").className="metric "+(totalR>=0?"green":"red");
+  
   $("mPF").textContent=grossLoss?(grossWin/grossLoss).toFixed(2):grossWin?"∞":"0.00";
   const totalPL=trades.reduce((a,x)=>a+(Number(x.pnl)||0),0);
   $("mPL").textContent=(totalPL>=0?"+":"")+"$"+totalPL.toFixed(2);
