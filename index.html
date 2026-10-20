@@ -145,6 +145,8 @@ textarea{min-height:100px;resize:vertical}
         <select id="resultFilter"><option value="">All Results</option><option>Win</option><option>Loss</option><option>BE</option></select>
         <select id="sideFilter"><option value="">Buy + Sell</option><option>BUY</option><option>SELL</option></select>
         <button type="button" class="ghost" onclick="exportCSV()">Export CSV</button>
+        <button type="button" class="ghost" onclick="$('importCSVFile').click()">Import CSV</button>
+        <input id="importCSVFile" type="file" accept=".csv,text/csv" style="display:none">
         <button type="button" class="danger" onclick="clearAll()">Clear All</button>
       </div>
       <div id="tradeTable" class="table-wrap" style="margin-top:12px"></div>
@@ -482,13 +484,129 @@ function renderProgress(){
   $("countChart").innerHTML=svgBarChart(dailyPoints);
 }
 
+function csvEscape(value){
+  return '"' + String(value ?? "").replace(/"/g, '""') + '"';
+}
 function exportCSV(){
-  const headers=["date","time","symbol","side","entry","sl","tp","lot","risk","result","r","pnl","tags","note"];
-  const rows=trades.map(x=>headers.map(h=>`"${String(h==="tags"?(x.tags||[]).join("|"):x[h]??"").replace(/"/g,'""')}"`).join(","));
+  // CSV can preserve trade fields and tags, but not embedded chart images.
+  const headers=["id","date","time","symbol","side","entry","sl","tp","lot","risk","result","r","pnl","tags","note"];
+  const rows=trades.map(x=>headers.map(h=>csvEscape(h==="tags"?(x.tags||[]).join("|"):x[h]??"")).join(","));
   const blob=new Blob(["\ufeff"+headers.join(",")+"\n"+rows.join("\n")],{type:"text/csv;charset=utf-8"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="xauusd_trading_journal.csv";document.body.appendChild(a);a.click();a.remove();
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="xauusd_trading_journal.csv";
+  document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
+function parseCSV(text){
+  // Handles quoted cells, escaped quotes, commas and newlines inside quoted cells.
+  text=String(text||"").replace(/^\uFEFF/,"");
+  const rows=[]; let row=[], cell="", quoted=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(quoted){
+      if(c==='"' && text[i+1]==='"'){cell+='"';i++;}
+      else if(c==='"') quoted=false;
+      else cell+=c;
+    }else{
+      if(c==='"') quoted=true;
+      else if(c===","){row.push(cell);cell="";}
+      else if(c==="\n"){row.push(cell);rows.push(row);row=[];cell="";}
+      else if(c!=="\r") cell+=c;
+    }
+  }
+  if(cell.length||row.length){row.push(cell);rows.push(row);}
+  return rows.filter(r=>r.some(v=>String(v).trim()!==""));
+}
+function normalizeHeader(s){
+  return String(s||"").trim().toLowerCase().replace(/[\s_\-./()%$]+/g,"");
+}
+function importCSVFile(file){
+  const reader=new FileReader();
+  reader.onerror=()=>alert("อ่านไฟล์ CSV ไม่สำเร็จ");
+  reader.onload=()=>{
+    try{
+      const rows=parseCSV(reader.result);
+      if(rows.length<2) throw new Error("ไม่พบข้อมูล Trade ในไฟล์");
+      const headers=rows[0].map(normalizeHeader);
+      const aliases={
+        id:["id","tradeid","ticket","ticketnumber"],
+        date:["date","opentime","opendate","closedate","closetime","วันที่"],
+        time:["time","opentimeonly","entrytime","เวลา"],
+        symbol:["symbol","instrument","pair","asset","สัญลักษณ์"],
+        side:["side","direction","type","tradeType","คำสั่ง"],
+        entry:["entry","entryprice","openprice","priceopen","ราคาเข้า"],
+        sl:["sl","stoploss","stoplossprice","s/l"],
+        tp:["tp","takeprofit","takeprofitprice","t/p"],
+        lot:["lot","lots","volume","size"],
+        risk:["risk","riskpercent","riskpercentage","risk%"],
+        result:["result","outcome","status","ผลลัพธ์"],
+        r:["r","rmultiple","rrresult","rmultiplevalue"],
+        pnl:["pnl","profit","netprofit","profitloss","pl","profit($)"],
+        tags:["tags","tag","labels","setup"],
+        note:["note","notes","comment","comments","journal","เหตุผล"]
+      };
+      const col={};
+      for(const [key,names] of Object.entries(aliases)){
+        col[key]=headers.findIndex(h=>names.map(normalizeHeader).includes(h));
+      }
+      if(col.date<0 && col.symbol<0 && col.entry<0) throw new Error("ไม่พบคอลัมน์ที่รู้จัก กรุณาใช้ CSV จาก XAUUSD Trading Journal หรือไฟล์ที่มี Date / Symbol / Entry");
+      const imported=[];
+      for(let i=1;i<rows.length;i++){
+        const cells=rows[i];
+        const get=k=>col[k]>=0?String(cells[col[k]]??"").trim():"";
+        const num=k=>{const n=Number(get(k).replace(/[$,%]/g,""));return Number.isFinite(n)?n:0;};
+        const rawDate=get("date");
+        let date=rawDate;
+        // Convert common spreadsheet date/time formats to YYYY-MM-DD where possible.
+        const iso=rawDate.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
+        const dmy=rawDate.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+        if(iso) date=iso[1]+"-"+String(iso[2]).padStart(2,"0")+"-"+String(iso[3]).padStart(2,"0");
+        else if(dmy) date=dmy[3]+"-"+String(dmy[2]).padStart(2,"0")+"-"+String(dmy[1]).padStart(2,"0");
+        let side=get("side").toUpperCase();
+        if(["BUY","LONG"].includes(side)) side="BUY";
+        else if(["SELL","SHORT"].includes(side)) side="SELL";
+        else side="BUY";
+        let result=get("result");
+        const r=num("r"), pnl=num("pnl");
+        const lower=result.toLowerCase();
+        if(["win","won","profit","profitable"].includes(lower)) result="Win";
+        else if(["loss","lost","stoploss"].includes(lower)) result="Loss";
+        else if(["be","breakeven","break even","flat"].includes(lower)) result="BE";
+        else if(!result) result=pnl>0||r>0?"Win":pnl<0||r<0?"Loss":"BE";
+        else result="BE";
+        const tagsRaw=get("tags");
+        const tags=tagsRaw?tagsRaw.split(/[|;]+/).map(t=>t.trim()).filter(Boolean):[];
+        imported.push({
+          id:/^\d+$/.test(get("id"))?Number(get("id")):(Date.now()+i),
+          date,time:get("time"),symbol:get("symbol")||"XAUUSD",side,
+          entry:num("entry"),sl:num("sl"),tp:num("tp"),lot:num("lot"),risk:num("risk"),
+          result,r,pnl,tags,note:get("note"),before:"",after:""
+        });
+      }
+      if(!imported.length) throw new Error("ไม่พบแถวข้อมูลที่นำเข้าได้");
+      const replace=confirm("พบ "+imported.length+" รายการใน CSV\\n\\nกด OK = รวมกับประวัติเดิม (ข้าม ID ที่ซ้ำ)\\nกด Cancel = ยกเลิกการนำเข้า");
+      if(!replace) return;
+      const existingIds=new Set(trades.map(t=>String(t.id)));
+      const fresh=imported.filter(t=>!existingIds.has(String(t.id)));
+      trades=[...fresh,...trades];
+      save();
+      renderDashboard();renderTrades();renderAnalysis();renderProgress();
+      alert("นำเข้าสำเร็จ "+fresh.length+" รายการ"+(imported.length-fresh.length?" (ข้ามรายการ ID ซ้ำ "+(imported.length-fresh.length)+" รายการ)":"")+
+        "\\nหมายเหตุ: รูป Screenshot ไม่ได้อยู่ใน CSV จึงไม่ถูกนำเข้า");
+    }catch(err){
+      alert("นำเข้า CSV ไม่สำเร็จ: "+err.message);
+    }finally{
+      $("importCSVFile").value="";
+    }
+  };
+  reader.readAsText(file,"UTF-8");
+}
+$("importCSVFile").addEventListener("change",e=>{
+  const file=e.target.files&&e.target.files[0];
+  if(file) importCSVFile(file);
+});
+
 function clearAll(){
   if(!confirm("ลบ Trade ทั้งหมด?"))return;
   trades=[];save();renderDashboard();renderTrades();renderAnalysis();
