@@ -43,6 +43,23 @@ textarea{min-height:100px;resize:vertical}
 .tag{display:inline-block;padding:4px 8px;margin:2px;border-radius:999px;background:#1a2c49;border:1px solid #30486d;font-size:11px}
 .actions{display:flex;gap:8px;margin-top:18px;justify-content:flex-end}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters input,.filters select{width:auto;min-width:145px}
 .empty{text-align:center;color:var(--muted);padding:34px 16px}.two{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(220px,.65fr);gap:16px;align-items:stretch}
+
+.progress-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.progress-stat{background:#111d33;border:1px solid #293e60;border-radius:14px;padding:13px}
+.progress-stat .small{font-size:12px;color:var(--muted)}
+.progress-stat .big{font-size:22px;font-weight:800;margin-top:5px;overflow-wrap:anywhere}
+.chart-wrap{width:100%;overflow:hidden}
+.chart-wrap svg{display:block;width:100%;height:auto;min-height:190px}
+.chart-legend{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-top:8px}
+.chart-legend span{display:flex;align-items:center;gap:5px}
+.legend-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.cal-count{font-size:10px;color:#b7c8e5;margin-top:3px;line-height:1.2}
+.cal-day{cursor:pointer}
+@media(max-width:600px){
+ .progress-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .progress-stat{padding:11px}.progress-stat .big{font-size:19px}
+}
+
 .preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .shot{border:1px dashed #3a5279;border-radius:12px;min-height:135px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#091427;position:relative;margin-top:7px}
 .shot img{width:100%;height:100%;object-fit:cover;display:block}.shot span{color:#8195b7;font-size:12px;text-align:center;padding:10px}
@@ -102,6 +119,7 @@ textarea{min-height:100px;resize:vertical}
     <button type="button" class="tab" data-page="trades" onclick="showPage('trades')">Trades</button>
     <button type="button" class="tab" data-page="add" onclick="showPage('add')">Add Trade</button>
     <button type="button" class="tab" data-page="analysis" onclick="showPage('analysis')">Tag Analysis</button>
+    <button type="button" class="tab" data-page="progress" onclick="showPage('progress')">Progress</button>
   </div>
 
   <section id="dashboard" class="page active">
@@ -186,13 +204,32 @@ textarea{min-height:100px;resize:vertical}
   <section id="analysis" class="page">
     <div class="panel"><h2>Performance by Tag</h2><div id="tagAnalysis"></div></div>
   </section>
+
+  <section id="progress" class="page">
+    <div class="panel">
+      <h2>📈 Trading Progress</h2>
+      <p class="muted" style="margin-top:-5px">ความก้าวหน้าจากข้อมูล Trade ที่บันทึกไว้ในอุปกรณ์นี้</p>
+      <div id="progressStats" class="progress-grid"></div>
+    </div>
+    <div class="panel">
+      <h2>💵 Cumulative P/L ($)</h2>
+      <div id="plChart" class="chart-wrap"></div>
+      <div class="chart-legend"><span><i class="legend-dot" style="background:#35e0a1"></i>ยอดกำไร/ขาดทุนสะสม</span></div>
+    </div>
+    <div class="panel">
+      <h2>📊 Trades per Day</h2>
+      <div id="countChart" class="chart-wrap"></div>
+      <div class="chart-legend"><span><i class="legend-dot" style="background:#659cff"></i>จำนวนออเดอร์ต่อวัน</span></div>
+    </div>
+  </section>
 </div>
 
 <nav class="mobile-bottom">
   <button type="button" data-page="dashboard" onclick="showPage('dashboard')"><strong>⌂</strong>Dashboard</button>
   <button type="button" data-page="trades" onclick="showPage('trades')"><strong>☷</strong>Trades</button>
   <button type="button" data-page="add" onclick="showPage('add')"><strong>＋</strong>Add</button>
-  <button type="button" data-page="analysis" onclick="showPage('analysis')"><strong>◔</strong>Analysis</button>
+  <button type="button" data-page="analysis" onclick="showPage('analysis')"><strong>◔</strong>Tags</button>
+  <button type="button" data-page="progress" onclick="showPage('progress')"><strong>↗</strong>Progress</button>
 </nav>
 
 <script>
@@ -234,6 +271,7 @@ function showPage(page){
   if(page==="dashboard") renderDashboard();
   if(page==="trades") renderTrades();
   if(page==="analysis") renderAnalysis();
+  if(page==="progress") renderProgress();
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
@@ -366,7 +404,7 @@ function renderCalendar(){
   for(let d=1;d<=days;d++){
     const ds=`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
     const ts=trades.filter(x=>x.date===ds),r=ts.reduce((a,x)=>a+(Number(x.r)||0),0),pl=ts.reduce((a,x)=>a+(Number(x.pnl)||0),0);
-    s+=`<div class="cal-day ${pl>0||(!pl&&r>0)?"win":pl<0||(!pl&&r<0)?"loss":""}" onclick="showDateTrades('${ds}')"><div class="num">${d}</div>${ts.length?`<div class="cal-dot">${pl>=0?"🟢":"🔴"} ${pl>=0?"+":""}$${pl.toFixed(2)}</div><div style="margin-top:3px;font-size:10px;color:#9eabc4">${r>=0?"+":""}${r.toFixed(2)}R</div>`:""}</div>`;
+    s+=`<div class="cal-day ${pl>0||(!pl&&r>0)?"win":pl<0||(!pl&&r<0)?"loss":""}" onclick="showDateTrades('${ds}')"><div class="num">${d}</div>${ts.length?`<div class="cal-count">${ts.length} ${ts.length===1?"trade":"trades"}</div><div class="cal-dot">${pl>=0?"🟢":"🔴"} ${pl>=0?"+":""}$${pl.toFixed(2)}</div><div style="margin-top:3px;font-size:10px;color:#9eabc4">${r>=0?"+":""}${r.toFixed(2)}R</div>`:""}</div>`;
   }
   s+="</div>"; $("calendar").innerHTML=s;
 }
@@ -385,6 +423,65 @@ function renderAnalysis(){
   const arr=Object.entries(map).sort((a,b)=>b[1].r-a[1].r);
   $("tagAnalysis").innerHTML=arr.length?`<div class="table-wrap"><table class="table"><tr><th>Tag</th><th>Trades</th><th>Win Rate</th><th>Total R</th><th>Avg R</th></tr>${arr.map(([t,v])=>`<tr><td><span class="tag">${esc(t)}</span></td><td>${v.n}</td><td>${(v.w/v.n*100).toFixed(1)}%</td><td class="${v.r>=0?"green":"red"}">${v.r>=0?"+":""}${v.r.toFixed(2)}R</td><td>${fmtR(v.r/v.n)}</td></tr>`).join("")}</table></div>`:"<div class='empty'>เพิ่ม Trade และเลือก Tag เพื่อดูสถิติ</div>";
 }
+
+function svgLineChart(points, opts={}){
+  const W=680,H=230,L=48,R=16,T=18,B=38,pw=W-L-R,ph=H-T-B;
+  if(!points.length) return "<div class='empty'>บันทึก Trade เพื่อเริ่มดูกราฟ</div>";
+  const vals=points.map(p=>Number(p.y)||0);
+  let min=Math.min(0,...vals),max=Math.max(0,...vals);
+  if(min===max){min-=1;max+=1;}
+  const pad=(max-min)*0.12;min-=pad;max+=pad;
+  const x=i=>L+(points.length===1?pw/2:i*pw/(points.length-1));
+  const y=v=>T+(max-v)/(max-min)*ph;
+  let grid="";
+  for(let i=0;i<5;i++){
+    const val=max-(max-min)*i/4,yy=y(val);
+    grid+=`<line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="#263957" stroke-width="1"/><text x="${L-8}" y="${yy+4}" text-anchor="end" fill="#93a7c8" font-size="11">${opts.money?"$":""}${val.toFixed(opts.money?0:1)}</text>`;
+  }
+  const coords=points.map((p,i)=>`${x(i)},${y(p.y)}`).join(" ");
+  const dots=points.map((p,i)=>`<circle cx="${x(i)}" cy="${y(p.y)}" r="3.5" fill="${opts.color||"#35e0a1"}"><title>${esc(p.label)}: ${opts.money?"$":""}${Number(p.y).toFixed(2)}</title></circle>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${opts.aria||"Progress chart"}">${grid}<polyline points="${coords}" fill="none" stroke="${opts.color||"#35e0a1"}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${dots}<text x="${L}" y="${H-12}" fill="#93a7c8" font-size="11">${esc(points[0].label)}</text><text x="${W-R}" y="${H-12}" text-anchor="end" fill="#93a7c8" font-size="11">${esc(points[points.length-1].label)}</text></svg>`;
+}
+function svgBarChart(points){
+  const W=680,H=230,L=42,R=14,T=18,B=42,pw=W-L-R,ph=H-T-B;
+  if(!points.length) return "<div class='empty'>บันทึก Trade เพื่อเริ่มดูกราฟ</div>";
+  const max=Math.max(1,...points.map(p=>p.y)),step=pw/points.length,bw=Math.max(4,step*.62);
+  let grid="";
+  for(let i=0;i<4;i++){
+    const val=Math.round(max*(3-i)/3),yy=T+ph*(i/3);
+    grid+=`<line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="#263957"/><text x="${L-8}" y="${yy+4}" text-anchor="end" fill="#93a7c8" font-size="11">${val}</text>`;
+  }
+  const bars=points.map((p,i)=>{
+    const h=(p.y/max)*ph,xx=L+i*step+(step-bw)/2,yy=T+ph-h;
+    return `<rect x="${xx}" y="${yy}" width="${bw}" height="${Math.max(0,h)}" rx="3" fill="#659cff"><title>${esc(p.label)}: ${p.y} trades</title></rect>`;
+  }).join("");
+  const every=Math.max(1,Math.ceil(points.length/7));
+  const labels=points.map((p,i)=>i%every===0||i===points.length-1?`<text x="${L+i*step+step/2}" y="${H-12}" text-anchor="middle" fill="#93a7c8" font-size="10">${esc(p.label)}</text>`:"").join("");
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Trades per day bar chart">${grid}${bars}${labels}</svg>`;
+}
+function renderProgress(){
+  const sorted=[...trades].sort((a,b)=>String(a.date||"").localeCompare(String(b.date||""))||String(a.time||"").localeCompare(String(b.time||"")));
+  const totalPL=sorted.reduce((a,x)=>a+(Number(x.pnl)||0),0);
+  const totalR=sorted.reduce((a,x)=>a+(Number(x.r)||0),0);
+  const wins=sorted.filter(x=>x.result==="Win").length;
+  const winRate=sorted.length?wins/sorted.length*100:0;
+  const daily={};
+  sorted.forEach(x=>{const d=x.date||"No date";daily[d]=(daily[d]||0)+1;});
+  const bestDay=Object.entries(daily).sort((a,b)=>b[1]-a[1])[0];
+  $("progressStats").innerHTML=`
+    <div class="progress-stat"><div class="small">Total P/L</div><div class="big ${totalPL>=0?"green":"red"}">${totalPL>=0?"+":""}$${totalPL.toFixed(2)}</div></div>
+    <div class="progress-stat"><div class="small">Total R</div><div class="big ${totalR>=0?"green":"red"}">${totalR>=0?"+":""}${totalR.toFixed(2)}R</div></div>
+    <div class="progress-stat"><div class="small">Win Rate</div><div class="big">${winRate.toFixed(1)}%</div></div>
+    <div class="progress-stat"><div class="small">Total Trades</div><div class="big">${sorted.length}</div></div>
+    <div class="progress-stat"><div class="small">Trading Days</div><div class="big">${Object.keys(daily).filter(k=>k!=="No date").length}</div></div>
+    <div class="progress-stat"><div class="small">Most Trades / Day</div><div class="big">${bestDay?bestDay[1]:0}</div></div>`;
+  let cumulative=0;
+  const plPoints=sorted.map(x=>({label:(x.date||"").slice(5)||"—",y:(cumulative+=Number(x.pnl)||0)}));
+  $("plChart").innerHTML=svgLineChart(plPoints,{money:true,color:"#35e0a1",aria:"Cumulative profit and loss"});
+  const dailyPoints=Object.entries(daily).filter(([d])=>d!=="No date").sort((a,b)=>a[0].localeCompare(b[0])).map(([d,n])=>({label:d.slice(5),y:n}));
+  $("countChart").innerHTML=svgBarChart(dailyPoints);
+}
+
 function exportCSV(){
   const headers=["date","time","symbol","side","entry","sl","tp","lot","risk","result","r","pnl","tags","note"];
   const rows=trades.map(x=>headers.map(h=>`"${String(h==="tags"?(x.tags||[]).join("|"):x[h]??"").replace(/"/g,'""')}"`).join(","));
